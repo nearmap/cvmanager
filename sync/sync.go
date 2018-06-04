@@ -108,7 +108,7 @@ func (s *Syncer) initialState() state.StateFunc {
 
 		var states []state.State
 		for _, wl := range toUpdate {
-			st := verify.NewVerifiers(s.k8sProvider.Client(), s.k8sProvider.Namespace(), version, cv.Spec.Container.Verify,
+			st := s.verify(version,
 				s.updateRolloutStatus(version, deploy.RolloutStatusProgressing,
 					s.deploy(version, wl,
 						s.successfulDeploymentStats(wl,
@@ -162,11 +162,27 @@ func (s *Syncer) containerVersion(workload k8s.Workload) (string, error) {
 }
 */
 
+func (s *Syncer) verify(version string, next state.State) state.StateFunc {
+	return func(ctx context.Context) (state.States, error) {
+		if version == s.cv.Status.CurrVersion && s.cv.Status.CurrStatus == deploy.RolloutStatusProgressing {
+			// we've already run the verify step
+			return state.Single(next)
+		}
+
+		return state.Single(
+			verify.NewVerifiers(s.k8sProvider.Client(), s.k8sProvider.Namespace(), version, s.cv.Spec.Container.Verify, next))
+	}
+}
+
 // updateRolloutStatus updates the ContainerVersion resource status with the given version and status
 // value and sests the current cv instance in the syncer with the updated values.
 func (s *Syncer) updateRolloutStatus(version, status string, next state.State) state.StateFunc {
 	return func(ctx context.Context) (state.States, error) {
-		glog.V(2).Info("updateRolloutStatus: cv=%s, version=%s, status=%s", s.cv.Name, version, status)
+		if version == s.cv.Status.CurrVersion && s.cv.Status.CurrStatus == deploy.RolloutStatusProgressing {
+			return state.Single(next)
+		}
+
+		glog.V(2).Info("updating rollout status: cv=%s, version=%s, status=%s", s.cv.Name, version, status)
 
 		cv, err := s.k8sProvider.UpdateRolloutStatus(s.cv.Name, version, status, time.Now().UTC())
 		if err != nil {
@@ -176,12 +192,7 @@ func (s *Syncer) updateRolloutStatus(version, status string, next state.State) s
 				s.cv.Name, version, status))
 		}
 
-		glog.V(4).Info("setting cv in syncer: cv=%+v", cv)
-
 		s.cv = cv
-
-		glog.V(4).Info("finished setting cv in syncer")
-
 		return state.Single(next)
 	}
 }
