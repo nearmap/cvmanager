@@ -517,5 +517,5 @@ func specVersion(cv *cv1.ContainerVersion) string {
 		panic(fmt.Sprintf("failed to marshal ContainerVersion: %v", err))
 	}
 	result := md5.Sum(byt)
-	return string(result[:])
+	return fmt.Sprintf("%x", result)
 }
