@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	healthFilename = "/health/state"
+	healthFilename = "/tmp/cvm-state"
 )
 
 // UpdateHealthStatus updates the health status of the syncer to indicate that it is
