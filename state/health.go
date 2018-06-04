@@ -1,7 +1,6 @@
 package state
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -17,14 +16,9 @@ const (
 // UpdateHealthStatus updates the health status of the syncer to indicate that it is
 // in a healthy state.
 func UpdateHealthStatus() error {
-	glog.V(5).Infof("Writing health state at %s", healthFilename)
-
 	if err := ioutil.WriteFile(healthFilename, []byte(""), 0755); err != nil {
 		return errors.Wrapf(err, "failed to write health file at %s", healthFilename)
 	}
-
-	// TODO: remove
-	CheckHealth(time.Minute * 2)
 
 	return nil
 }
@@ -40,13 +34,6 @@ func CleanupHealthStatus() error {
 // CheckHealth checks that the last health update was within the given time duration.
 // Returns nil if the last update run was run within the duration, and an error otherwise.
 func CheckHealth(d time.Duration) error {
-	glog.V(5).Infof("Checking health with duration %v", d)
-
-	// TODO: remove
-	if err := ioutil.WriteFile(fmt.Sprintf("/tmp/state-%v", time.Now().UTC()), []byte(""), 0755); err != nil {
-		glog.Errorf("failed to write health file at %s: %v", healthFilename, err)
-	}
-
 	f, err := os.Stat(healthFilename)
 	if err != nil {
 		glog.Errorf("Failed to stat health file at %s: %v", healthFilename, err)
@@ -58,6 +45,5 @@ func CheckHealth(d time.Duration) error {
 		return errors.Errorf("Last health update was %s", f.ModTime().String())
 	}
 
-	glog.V(5).Infof("Health check passed.")
 	return nil
 }

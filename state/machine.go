@@ -126,12 +126,8 @@ func (m *Machine) Start() {
 	m.newOp()
 
 	for i := uint64(0); ; i++ {
-		glog.V(4).Info("entering select...")
-
 		select {
 		case o := <-m.ops:
-			glog.V(4).Infof("Received op: %v", o)
-
 			if err := UpdateHealthStatus(); err != nil {
 				glog.V(4).Infof("Failed to update health status: %v", err)
 			}
@@ -148,8 +144,6 @@ func (m *Machine) Start() {
 		default:
 			m.sleep(i)
 		}
-
-		glog.V(4).Info("finished machine loop")
 	}
 }
 
@@ -164,11 +158,7 @@ func (m *Machine) sleep(i uint64) {
 		sleep = maxSleepSeconds * time.Second
 	}
 
-	glog.V(4).Infof("sleeping for %v", sleep)
-
 	time.Sleep(sleep)
-
-	glog.V(4).Info("finished sleeping")
 }
 
 // canExecute returns true if the operation is in a state that can be executed.
@@ -181,7 +171,7 @@ func (m *Machine) canExecute(o *op) bool {
 
 // scheduleOps schedules the given operations on the state machine.
 func (m *Machine) scheduleOps(ops ...*op) {
-	glog.V(4).Infof("scheduling %d ops in new routine", len(ops))
+	glog.V(6).Infof("scheduling %d ops", len(ops))
 
 	var later []*op
 	for _, op := range ops {
@@ -192,12 +182,12 @@ func (m *Machine) scheduleOps(ops ...*op) {
 		}
 	}
 
-	glog.V(4).Infof("%d ops still require scheduling", len(later))
+	glog.V(6).Infof("%d ops still require scheduling", len(later))
 	go func() {
 		for _, op := range later {
 			m.ops <- op
 		}
-		glog.V(4).Infof("finished scheduling all ops")
+		glog.V(6).Infof("finished scheduling all ops")
 	}()
 }
 
@@ -212,7 +202,7 @@ func (m *Machine) executeOp(o *op) (finished bool) {
 		}
 	}()
 
-	glog.V(4).Infof("Executing operation: %v", o)
+	glog.V(6).Infof("Executing operation: %v", o)
 
 	if err := o.ctx.Err(); err != nil {
 		glog.V(1).Infof("Operation %s context error: %+v", ID(o.ctx), err)
@@ -223,10 +213,6 @@ func (m *Machine) executeOp(o *op) (finished bool) {
 	if !m.canExecute(o) {
 		return false
 	}
-
-	// TODO:
-	glog.V(4).Info("Do()")
-	time.Sleep(time.Second * 1)
 
 	states, err := o.state.Do(o.ctx)
 	if err != nil && IsPermanent(err) {
@@ -247,7 +233,7 @@ func (m *Machine) executeOp(o *op) (finished bool) {
 	}
 
 	if states.Empty() {
-		glog.V(4).Info("states is empty: cancelling context and initializing new")
+		glog.V(6).Info("states is empty: cancelling context and initializing new")
 		o.cancel()
 		go m.newOp()
 		return true
@@ -258,8 +244,6 @@ func (m *Machine) executeOp(o *op) (finished bool) {
 		ops = append(ops, o.new(st, states.OnFailure))
 	}
 	m.scheduleOps(ops...)
-
-	glog.V(4).Info("Finished executeOp")
 
 	return true
 }
@@ -276,8 +260,6 @@ func (m *Machine) permanentFailure(o *op, err error) {
 }
 
 func (m *Machine) newOp() {
-	glog.V(4).Info("Creating newOp")
-
 	var cancel context.CancelFunc
 	ctx := context.WithValue(m.ctx, ctxID, uuid.Formatter(uuid.NewV4(), uuid.FormatCanonical))
 	ctx = context.WithValue(ctx, ctxStartTime, time.Now().UTC())
@@ -289,7 +271,9 @@ func (m *Machine) newOp() {
 		state:  NewAfterState(time.Now().UTC().Add(m.options.StartWaitTime), m.start),
 	}
 
-	glog.V(4).Infof("newOp: created %+v", o)
+	if glog.V(6) {
+		glog.V(6).Infof("newOp: %+v", o)
+	}
 
 	m.ops <- o
 }
