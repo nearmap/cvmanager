@@ -439,6 +439,8 @@ func (c *CVController) newCRSyncDeployment(cv *cv1.ContainerVersion, version str
 							LivenessProbe: &corev1.Probe{
 								PeriodSeconds:       int32(livenessSeconds),
 								InitialDelaySeconds: int32(10),
+								TimeoutSeconds:      int32(5),
+								FailureThreshold:    int32(2),
 								Handler: corev1.Handler{
 									Exec: &corev1.ExecAction{
 										Command: []string{

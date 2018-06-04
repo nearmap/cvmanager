@@ -16,9 +16,15 @@ const (
 // UpdateHealthStatus updates the health status of the syncer to indicate that it is
 // in a healthy state.
 func UpdateHealthStatus() error {
+	glog.V(5).Infof("Writing health state at %s", healthFilename)
+
 	if err := ioutil.WriteFile(healthFilename, []byte(""), 0755); err != nil {
 		return errors.Wrapf(err, "failed to write health file at %s", healthFilename)
 	}
+
+	// TODO: remove
+	CheckHealth(time.Minute * 2)
+
 	return nil
 }
 
