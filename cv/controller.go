@@ -414,7 +414,7 @@ func (c *CVController) newCRSyncDeployment(cv *cv1.ContainerVersion, version str
 								fmt.Sprintf("--version=%s", cv.ResourceVersion),
 								fmt.Sprintf("--history=%t", c.opts.UseHistory),
 								fmt.Sprintf("--rollback=%t", c.opts.UseRollback),
-								fmt.Sprintf("--logtostderr"),
+								fmt.Sprintf("--logtostderr=true"),
 								fmt.Sprintf("--v=%d", glogVerbosity),
 								fmt.Sprintf("--vmodule=%s", glogVmodule),
 							},

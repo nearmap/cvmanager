@@ -151,6 +151,8 @@ objects:
                 - "--history=$(USE_HISTORY)"
                 - "--rollback=$(USE_ROLLBACK)"
                 - "--cv-img-repo=$(REPOSITORY)"
+                - "--v=8"
+                - "--logtostderr=true"
               env:
               - name: NAME
                 valueFrom:
