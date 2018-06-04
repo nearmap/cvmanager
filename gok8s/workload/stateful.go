@@ -64,10 +64,10 @@ func (ss *StatefulSet) RollbackAfter() *time.Duration {
 	return nil
 }
 
-//ProgressHealth implements the Workload interface.
-func (ss *StatefulSet) ProgressHealth(startTime time.Time) *bool {
+// ProgressHealth implements the Workload interface.
+func (ss *StatefulSet) ProgressHealth(startTime time.Time) (*bool, error) {
 	result := true
-	return &result
+	return &result, nil
 }
 
 // PodTemplateSpec implements the TemplateRolloutTarget interface.

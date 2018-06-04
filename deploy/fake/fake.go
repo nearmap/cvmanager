@@ -110,8 +110,8 @@ func (rt *RolloutTarget) RollbackAfter() *time.Duration {
 }
 
 // ProgressHealth implements the ProgressHealth interface.
-func (rt *RolloutTarget) ProgressHealth(startTime time.Time) *bool {
-	return rt.FakeProgressHealth
+func (rt *RolloutTarget) ProgressHealth(startTime time.Time) (*bool, error) {
+	return rt.FakeProgressHealth, nil
 }
 
 // PodTemplateSpec implements the TemplateRolloutTarget interface.

@@ -45,6 +45,15 @@ func newDeployment(deployment *appsv1.Deployment, client goappsv1.DeploymentInte
 	}
 }
 
+// curr returns the current state of the deployment.
+func (d *Deployment) curr() (*appsv1.Deployment, error) {
+	dep, err := d.client.Get(d.deployment.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get deployment state")
+	}
+	return dep, nil
+}
+
 func (d *Deployment) String() string {
 	return fmt.Sprintf("%+v", d.deployment)
 }
@@ -79,10 +88,19 @@ func (d *Deployment) RollbackAfter() *time.Duration {
 }
 
 // ProgressHealth implements the Workload interface.
-func (d *Deployment) ProgressHealth(startTime time.Time) *bool {
+func (d *Deployment) ProgressHealth(startTime time.Time) (*bool, error) {
+	glog.V(4).Infof("checking progress health at: %v", startTime)
+
+	dep, err := d.curr()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain progress health")
+	}
+
 	var ok *bool
-	for _, c := range d.deployment.Status.Conditions {
-		glog.V(4).Infof("deployment condition: %+v", c)
+	for _, c := range dep.Status.Conditions {
+		if glog.V(4) {
+			glog.V(4).Infof("deployment condition: %+v", c)
+		}
 
 		if c.LastUpdateTime.Time.Before(startTime) {
 			continue
@@ -94,7 +112,7 @@ func (d *Deployment) ProgressHealth(startTime time.Time) *bool {
 		if c.Status == corev1.ConditionFalse {
 			if c.Reason == "ProgressDeadlineExceeded" {
 				result := false
-				return &result
+				return &result, nil
 			}
 		} else {
 			if c.Reason == "NewReplicaSetAvailable" {
@@ -104,7 +122,7 @@ func (d *Deployment) ProgressHealth(startTime time.Time) *bool {
 		}
 	}
 
-	return ok
+	return ok, nil
 }
 
 // PodTemplateSpec implements the TemplateRolloutTarget interface.

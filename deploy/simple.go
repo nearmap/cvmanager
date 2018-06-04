@@ -85,7 +85,10 @@ func (sd *SimpleDeployer) checkRollbackState(container *v1.Container, next state
 			return state.Single(next)
 		}
 
-		healthy := sd.target.ProgressHealth(sd.cv.Status.CurrStatusTime.Time)
+		healthy, err := sd.target.ProgressHealth(sd.cv.Status.CurrStatusTime.Time)
+		if err != nil {
+			return state.Error(errors.Wrapf(err, "failed to check progress health for %s", sd.target.Name()))
+		}
 		if healthy == nil {
 			glog.V(4).Infof("Waiting for healthy state of target %s", sd.target.Name())
 			return state.After(time.Second*15, sd.checkRollbackState(container, next))
@@ -96,9 +99,10 @@ func (sd *SimpleDeployer) checkRollbackState(container *v1.Container, next state
 			return state.Single(next)
 		}
 
+		// rollback
 		prevVersion := strings.SplitAfterN(container.Image, ":", 2)[1]
 		glog.V(1).Infof("Rolling back target %s", sd.target.Name())
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			if rbErr := sd.target.PatchPodSpec(sd.cv, *container, prevVersion); rbErr != nil {
 				glog.V(2).Infof("Failed to rollback container version (will retry):	from version=%s, to version=%s, target=%s, error=%v",
 					sd.version, prevVersion, sd.target.Name(), rbErr)
@@ -110,6 +114,6 @@ func (sd *SimpleDeployer) checkRollbackState(container *v1.Container, next state
 			return state.Error(err)
 		}
 
-		return state.Single(next)
+		return state.Error(state.NewFailed("deployment failed healthy state check and was rolled back"))
 	}
 }

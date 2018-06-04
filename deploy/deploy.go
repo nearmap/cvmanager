@@ -40,7 +40,7 @@ type RolloutTarget interface {
 
 	// ProgressHealth indicates weather the current status of progress healthy or not.
 	// The start time of the deployment operation is provided.
-	ProgressHealth(startTime time.Time) *bool
+	ProgressHealth(startTime time.Time) (*bool, error)
 }
 
 // TemplateRolloutTarget defines methods for deployable resources that manage a collection
