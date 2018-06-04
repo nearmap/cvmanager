@@ -437,12 +437,16 @@ func (c *CVController) newCRSyncDeployment(cv *cv1.ContainerVersion, version str
 								},
 							},
 							LivenessProbe: &corev1.Probe{
-								PeriodSeconds: int32(livenessSeconds),
+								PeriodSeconds:       int32(livenessSeconds),
+								InitialDelaySeconds: int32(10),
 								Handler: corev1.Handler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
-											"cvmanager", "cr", "sync",
-											"status", "--by", fmt.Sprintf("%ds", livenessSeconds),
+											"cvmanager", "cr", "sync", "status",
+											"--by", fmt.Sprintf("%ds", livenessSeconds),
+											fmt.Sprintf("--logtostderr=true"),
+											fmt.Sprintf("--v=%d", glogVerbosity),
+											fmt.Sprintf("--vmodule=%s", glogVmodule),
 										},
 									},
 								},

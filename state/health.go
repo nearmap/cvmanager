@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/pkg/errors"
 )
 
@@ -32,13 +33,19 @@ func CleanupHealthStatus() error {
 // CheckHealth checks that the last health update was within the given time duration.
 // Returns nil if the last update run was run within the duration, and an error otherwise.
 func CheckHealth(d time.Duration) error {
+	glog.V(5).Infof("Checking health with duration %v", d)
+
 	f, err := os.Stat(healthFilename)
 	if err != nil {
+		glog.Errorf("Failed to stat health file at %s: %v", healthFilename, err)
 		return errors.Wrapf(err, "failed to stat the health status at %s", healthFilename)
 	}
 
 	if !time.Now().Add(d * -1).Before(f.ModTime()) {
+		glog.Errorf("Failed health check: last health update was at %v", f.ModTime())
 		return errors.Errorf("Last health update was %s", f.ModTime().String())
 	}
+
+	glog.V(5).Infof("Health check passed.")
 	return nil
 }
