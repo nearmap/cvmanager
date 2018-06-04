@@ -3,7 +3,6 @@ package state
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/golang/glog"
@@ -182,22 +181,23 @@ func (m *Machine) canExecute(o *op) bool {
 
 // scheduleOps schedules the given operations on the state machine.
 func (m *Machine) scheduleOps(ops ...*op) {
-	// TODO: try to add operation to channel before creating goroutine?
-
 	glog.V(4).Infof("scheduling %d ops in new routine", len(ops))
 
-	go func() {
-		// TODO:
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("panic in scheduling goroutine: %v", r)
-			}
-		}()
+	var later []*op
+	for _, op := range ops {
+		select {
+		case m.ops <- op:
+		default:
+			later = append(later, op)
+		}
+	}
 
-		for _, op := range ops {
+	glog.V(4).Infof("%d ops still require scheduling", len(later))
+	go func() {
+		for _, op := range later {
 			m.ops <- op
 		}
-		glog.V(4).Infof("finished scheduling %d ops", len(ops))
+		glog.V(4).Infof("finished scheduling all ops")
 	}()
 }
 
