@@ -402,6 +402,7 @@ func (c *CVController) newCRSyncDeployment(cv *cv1.ContainerVersion, version str
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
 							Name:  fmt.Sprintf("%s-container", dName),
