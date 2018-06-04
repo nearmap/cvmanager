@@ -78,8 +78,13 @@ func NewECR(repository, versionExp string, stats stats.Stats) (*ecrProvider, err
 func (s *ecrProvider) Version(ctx context.Context, tag string) (string, error) {
 	// TODO: parameterize timeout
 	var cancel context.CancelFunc
-	ctx, cancel = context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel = context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
+
+	if glog.V(4) {
+		glog.V(4).Infof("Making ECR DescribeImages request for repository=%s, registry=%s, tag=%s",
+			s.repoName, s.accountID, tag)
+	}
 
 	req := &ecr.DescribeImagesInput{
 		ImageIds: []*ecr.ImageIdentifier{
@@ -109,6 +114,8 @@ func (s *ecrProvider) Version(ctx context.Context, tag string) (string, error) {
 		s.stats.IncCount(fmt.Sprintf("registry.%s.sync.failure", s.repoName), "badsha")
 		return "", errors.Errorf("No version found for tag %s", tag)
 	}
+
+	glog.V(2).Infof("Got currentVersion=%s from ECR", currentVersion)
 
 	return currentVersion, nil
 }

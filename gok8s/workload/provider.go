@@ -83,6 +83,10 @@ func (k *Provider) CV(name string) (*cv1.ContainerVersion, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get ContainerVersion instance with name %s", name)
 	}
+
+	if glog.V(4) {
+		glog.V(4).Infof("Got ContainerVersion: %+v", cv)
+	}
 	return cv, nil
 }
 
@@ -153,6 +157,8 @@ func (k *Provider) CVResources(cv *cv1.ContainerVersion) ([]*Resource, error) {
 func (k *Provider) Workloads(cv *cv1.ContainerVersion) ([]Workload, error) {
 	var result []Workload
 
+	glog.V(4).Infof("Retrieving Workloads for cv=%s", cv.Name)
+
 	set := labels.Set(cv.Spec.Selector)
 	listOpts := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
 
@@ -219,6 +225,8 @@ func (k *Provider) Workloads(cv *cv1.ContainerVersion) ([]Workload, error) {
 		wl := item
 		result = append(result, NewStatefulSet(k.cs, k.namespace, &wl))
 	}
+
+	glog.V(2).Infof("Retrieved %d workloads", len(result))
 
 	return result, nil
 }

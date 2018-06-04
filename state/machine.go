@@ -95,7 +95,7 @@ type Machine struct {
 func NewMachine(start State, options ...func(*Options)) *Machine {
 	opts := &Options{
 		StartWaitTime:    5 * time.Minute,
-		OperationTimeout: 10 * time.Minute,
+		OperationTimeout: 15 * time.Minute,
 		MaxRetries:       5,
 		Stats:            stats.NewFake(),
 		Recorder:         events.NewFakeRecorder(100),

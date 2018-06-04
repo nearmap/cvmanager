@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -40,6 +41,11 @@ func CleanupHealthStatus() error {
 // Returns nil if the last update run was run within the duration, and an error otherwise.
 func CheckHealth(d time.Duration) error {
 	glog.V(5).Infof("Checking health with duration %v", d)
+
+	// TODO: remove
+	if err := ioutil.WriteFile(fmt.Sprintf("/tmp/state-%v", time.Now().UTC()), []byte(""), 0755); err != nil {
+		glog.Errorf("failed to write health file at %s: %v", healthFilename, err)
+	}
 
 	f, err := os.Stat(healthFilename)
 	if err != nil {
