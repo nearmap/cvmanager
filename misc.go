@@ -164,10 +164,7 @@ func newCRSyncCommand(root *crRoot) *cobra.Command {
 		k8sProvider := k8s.NewProvider(k8sClient, customCS, params.namespace,
 			conf.WithRecorder(recorder), conf.WithStats(stats), conf.WithHistory(params.history))
 
-		cv, err := customCS.CustomV1().ContainerVersions(params.namespace).Get(params.cvName,
-			metav1.GetOptions{
-				ResourceVersion: params.version,
-			})
+		cv, err := customCS.CustomV1().ContainerVersions(params.namespace).Get(params.cvName, metav1.GetOptions{})
 		if err != nil {
 			scStatus = 2
 			glog.Errorf("Failed to find CV resource in namespace=%s, name=%s, error=%v", params.namespace, params.cvName, err)
