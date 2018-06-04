@@ -1,6 +1,8 @@
 package cv
 
 import (
+	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -198,15 +200,19 @@ func (c *CVController) processNextWorkItem() bool {
 			runtime.HandleError(fmt.Errorf("expected string in queue but got %#v", obj))
 			return nil
 		}
-		glog.V(2).Infof("Processing CRD in sync handler: name=%v, crd=%v", key, obj)
+
+		if glog.V(2) {
+			glog.V(2).Infof("Processing CRD in sync handler: name=%v, crd=%v", key, obj)
+		}
 
 		// Run the syncHandler, passing it the namespace/name string of the
 		// ContainerVersion resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			return errors.Wrapf(err, "error syncing '%s'", key)
 		}
+
 		c.queue.Forget(obj)
-		glog.V(2).Infof("Successfully synced '%s'", key)
+		glog.V(1).Infof("Successfully synced '%s'", key)
 		c.opts.Stats.IncCount(fmt.Sprintf("cvc.%s.sync.success", key))
 		return nil
 	}(obj)
@@ -250,7 +256,9 @@ func (c *CVController) syncHandler(key string) error {
 		return errors.Wrap(err, "Failed to sync deployment")
 	}
 
-	glog.V(2).Infof("In sync handler of CVC for key=%s, namespace=%v, cv=%v, name=%v", key, namespace, cv, name)
+	if glog.V(2) {
+		glog.V(2).Infof("In sync handler of CVC for key=%s, namespace=%v, cv=%v, name=%v", key, namespace, cv, name)
+	}
 
 	c.recorder.Event(cv, corev1.EventTypeNormal, "Synced", "Sync of CV resource was successful")
 	return nil
@@ -291,8 +299,12 @@ func (c *CVController) dequeueCV(obj interface{}) {
 		}
 		glog.V(2).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
+
 	// All resources owned by CV will automatically be deleted so nothing needs to be done
-	glog.V(2).Infof("Successfully dequeued object cv'%s/%s'", object.GetNamespace(), object.GetName())
+
+	if glog.V(2) {
+		glog.V(2).Infof("Successfully dequeued object cv'%s/%s'", object.GetNamespace(), object.GetName())
+	}
 }
 
 // handleCVOwnedObj will take any resource implementing metav1.Object and attempt
@@ -319,8 +331,11 @@ func (c *CVController) handleCVOwnedObj(obj interface{}) {
 
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		key := fmt.Sprintf("%s/%s", object.GetNamespace(), object.GetName())
-		glog.V(2).Infof("Container version controller owned object info: key=%s, owner=%v, obj=%v",
-			key, metav1.GetControllerOf(object), object)
+
+		if glog.V(2) {
+			glog.V(2).Infof("Container version controller owned object info: key=%s, owner=%v, obj=%v",
+				key, metav1.GetControllerOf(object), object)
+		}
 
 		if ownerRef.Kind != "ContainerVersion" {
 			return
@@ -411,7 +426,7 @@ func (c *CVController) newCRSyncDeployment(cv *cv1.ContainerVersion, version str
 								"sync",
 								fmt.Sprintf("--namespace=%s", cv.Namespace),
 								fmt.Sprintf("--cv=%s", cv.Name),
-								fmt.Sprintf("--version=%s", cv.ResourceVersion),
+								fmt.Sprintf("--version=%s", specVersion(cv)),
 								fmt.Sprintf("--history=%t", c.opts.UseHistory),
 								fmt.Sprintf("--rollback=%t", c.opts.UseRollback),
 								fmt.Sprintf("--logtostderr=true"),
@@ -493,4 +508,14 @@ func (c *CVController) fetchVersion() (string, error) {
 		return "", errors.Wrap(err, "Missing config map cvmanager in kube-system")
 	}
 	return version, nil
+}
+
+func specVersion(cv *cv1.ContainerVersion) string {
+	byt, err := json.Marshal(cv.Spec)
+	if err != nil {
+		glog.Errorf("Failed to marshal ContainerVersion: %v", err)
+		panic(fmt.Sprintf("failed to marshal ContainerVersion: %v", err))
+	}
+	result := md5.Sum(byt)
+	return string(result[:])
 }
