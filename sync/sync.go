@@ -72,7 +72,7 @@ func (s *Syncer) initialState() state.StateFunc {
 		}
 		s.cv = cv
 
-		version, err := s.registry.Version(cv.Spec.Tag)
+		version, err := s.registry.Version(ctx, cv.Spec.Tag)
 		if err != nil {
 			s.options.Recorder.Event(events.Warning, "CRSyncFailed", "Failed to get version from registry")
 			return state.Error(errors.Wrap(err, "failed to get version from registry"))

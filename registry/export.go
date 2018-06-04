@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"strings"
 )
 
@@ -32,5 +33,5 @@ type Tagger interface {
 }
 
 type Registry interface {
-	Version(tag string) (string, error)
+	Version(ctx context.Context, tag string) (string, error)
 }

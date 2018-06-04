@@ -1,6 +1,7 @@
 package dockerhub
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/heroku/docker-registry-client/registry"
@@ -75,7 +76,7 @@ func NewDH(repository, versionExp string, options ...func(*Options)) (*dhV2Provi
 	return dhV2Provider, nil
 }
 
-func (s *dhV2Provider) Version(tag string) (string, error) {
+func (s *dhV2Provider) Version(ctx context.Context, tag string) (string, error) {
 	newVersion, err := s.getDigest(tag)
 	if err != nil {
 		s.opts.Stats.IncCount(fmt.Sprintf("registry.%s.sync.failure", s.repository), "badsha")
