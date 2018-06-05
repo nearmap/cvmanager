@@ -81,7 +81,7 @@ func (s *Syncer) initialState() state.StateFunc {
 		glog.V(4).Infof("Current version: %v", version)
 
 		if version == cv.Status.CurrVersion && cv.Status.CurrStatus != deploy.RolloutStatusProgressing {
-			glog.V(4).Info("Not attempting %s rollout of version %s: %+v", cv.Name, version, cv.Status)
+			glog.V(4).Infof("Not attempting %s rollout of version %s: %+v", cv.Name, version, cv.Status)
 			return state.None()
 		}
 
@@ -94,14 +94,6 @@ func (s *Syncer) initialState() state.StateFunc {
 		var toUpdate []k8s.Workload
 		for _, wl := range workloads {
 			toUpdate = append(toUpdate, wl)
-
-			//currVersion, err := s.containerVersion(wl)
-			//if err != nil {
-			//	return state.Error(errors.Wrapf(err, "failed to obtain container version for workload %s", wl.Name()))
-			//}
-			//if currVersion != version {
-			//	toUpdate = append(toUpdate, wl)
-			//}
 		}
 
 		glog.V(4).Infof("Found %d workloads to update", len(toUpdate))
@@ -126,7 +118,7 @@ func (s *Syncer) initialState() state.StateFunc {
 // the rollout status and generating relevant stats and events.
 func (s *Syncer) handleFailure(workload k8s.Workload, version string) state.OnFailureFunc {
 	return func(ctx context.Context, err error) {
-		glog.V(1).Infof("Failed to update container version after maximum retries: version=%v, target=%v, error=%v",
+		glog.V(1).Infof("Failed to process container version: version=%v, target=%v, error=%v",
 			version, workload.Name(), err)
 
 		s.options.Stats.Event(fmt.Sprintf("%s.sync.failure", workload.Name()),
@@ -141,26 +133,6 @@ func (s *Syncer) handleFailure(workload k8s.Workload, version string) state.OnFa
 		}
 	}
 }
-
-/*
-func (s *Syncer) containerVersion(workload k8s.Workload) (string, error) {
-	for _, c := range workload.PodSpec().Containers {
-		if c.Name == s.cv.Spec.Container.Name {
-			parts := strings.SplitN(c.Image, ":", 2)
-			if len(parts) > 2 {
-				return "", errors.New("invalid image on container: '%s', c.Image")
-			}
-			if parts[0] != s.cv.Spec.ImageRepo {
-				return "", errors.Errorf("Repository mismatch present: %s and requested %s don't match",
-					parts[0], s.cv.Spec.ImageRepo)
-			}
-			return parts[1], nil
-		}
-	}
-
-	return "", errors.Errorf("no container of name %s was found in workload %s", s.cv.Spec.Container.Name, workload.Name())
-}
-*/
 
 func (s *Syncer) verify(version string, next state.State) state.StateFunc {
 	return func(ctx context.Context) (state.States, error) {

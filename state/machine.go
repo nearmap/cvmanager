@@ -109,7 +109,7 @@ func NewMachine(start State, options ...func(*Options)) *Machine {
 
 	return &Machine{
 		start:   start,
-		ops:     make(chan *op, 1000), // TODO: channel size
+		ops:     make(chan *op, 100),
 		ctx:     ctx,
 		options: opts,
 	}
