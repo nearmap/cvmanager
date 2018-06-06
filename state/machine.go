@@ -182,6 +182,10 @@ func (m *Machine) scheduleOps(ops ...*op) {
 		}
 	}
 
+	if len(later) == 0 {
+		return
+	}
+
 	glog.V(6).Infof("%d ops still require scheduling", len(later))
 	go func() {
 		for _, op := range later {

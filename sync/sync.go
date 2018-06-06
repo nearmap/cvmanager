@@ -189,7 +189,7 @@ func (s *Syncer) successfulDeploymentStats(workload k8s.Workload, next state.Sta
 	}
 }
 
-// syncVersionConfig sync the config map referenced by CV resource - creates if absent and updates if required
+// syncVersionConfig syncs the config map referenced by CV resource - creates if absent and updates if required
 // The controller is not responsible for managing the config resource it reference but only for updating
 // and ensuring its present. If the reference to config was removed from CV resource its not the responsibility
 // of controller to remove it .. it assumes the configMap is external resource and not owned by cv resource
@@ -235,7 +235,7 @@ func (s *Syncer) syncVersionConfig(version string, next state.State) state.State
 		// }`, s.Config.ConfigMap.Key, version)))
 		_, err = client.CoreV1().ConfigMaps(namespace).Update(cm)
 		if err != nil {
-			events.FromContext(ctx).Event(events.Warning, "FailedUpdateVersionConfigMao", "Failed to update version configmap")
+			events.FromContext(ctx).Event(events.Warning, "FailedUpdateVersionConfigMap", "Failed to update version configmap")
 			return state.Error(errors.Wrapf(err, "failed to update version configmap from %s/%s:%s",
 				namespace, cv.Spec.Config.Name, cv.Spec.Config.Key))
 		}
