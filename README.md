@@ -5,6 +5,8 @@
 ![GitHub (pre-)release](https://img.shields.io/github/release/nearmap/cvmanager/all.svg)
 
 
+*CVManager is deprecated. Please use https://github.com/nearmap/kcd*
+
 # CVManager
 Container Version Manager (cvmanager) is a continous integration (CI) and continous delivery (CD) tool designed for Kubernetes cluster/services. Fundamentally, cvmanager is a custom Kubernetes controller to achieve a declarative configuration approach to continuous deployment. 
 
